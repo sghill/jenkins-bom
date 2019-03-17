@@ -6,14 +6,31 @@ jobs:
     working_directory: ~/repo
     environment:
       TERM: dumb
+      PREVIOUS_FILE: ~/keep/previous.txt
+      CURRENT_FILE: ~/repo/build/update-center/versions.txt
     steps:
       - checkout
       - restore_cache:
           keys:
             - v1-keep
-      - run: ./scripts/build
+      - run: ./gradlew fetchVersionsFromUpdateCenter
+      - run:
+          name: Check if current versions are different than last run
+          command: |
+            mkdir -p ~/keep
+            if [ -f $PREVIOUS_FILE ]; then
+              diff $PREVIOUS_FILE $CURRENT_FILE
+            fi
       - save_cache:
           paths:
             - ~/keep
             - ~/.gradle
           key: v1-keep
+          when: always
+      - run:
+          command: ./scripts/publish
+          when: on_fail # only publish when the diff shows something different
+      - run:
+          name: rotate the versions file
+          command: mv -f $CURRENT_FILE $PREVIOUS_FILE
+          when: always
