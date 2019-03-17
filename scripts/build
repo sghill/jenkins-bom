@@ -1,0 +1,41 @@
+#!/bin/sh
+set -efx
+
+mkdir ~/keep
+
+if [ "$CIRCLE_BRANCH" != "master" ]; then
+    echo "Nothing to do"
+    exit 0
+fi
+
+CURRENT_FILE=build/update-center/versions.txt
+PREVIOUS_FILE=~/keep/previous.txt
+
+if [ -f $CURRENT_FILE ]; then
+    echo "Found versions.txt; rotating to previous"
+    mv -f $CURRENT_FILE $PREVIOUS_FILE
+fi
+
+./gradlew fetchVersionsFromUpdateCenter
+
+if [ -f ~/keep/previous.txt ]; then
+    echo "We have a previous versions.txt - executing a comparison"
+
+    set +e
+    diff $PREVIOUS_FILE $CURRENT_FILE
+    DIFF_RESULT=$?
+    if [ $DIFF_RESULT -eq 0 ]; then
+        echo "versions are the same - stopping here"
+        exit 0
+    fi
+    set -e
+fi
+
+./gradlew publish \
+    -Pversion="`curl -sL https://updates.jenkins-ci.org/stable/latestCore.txt`-$CIRCLE_BUILD_NUM" \
+    -Pbintray.user=$PUBLISH_USER \
+    -Pbintray.apiKey=$PUBLISH_KEY \
+    -Psigning.keyId=$SIGNING_KEY \
+    -Psigning.password=$SIGNING_PASSWORD \
+    -Psigning.secretKeyRingFile=$SIGNING_FILE \
+    --stacktrace
