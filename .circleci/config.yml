@@ -15,4 +15,5 @@ jobs:
       - save_cache:
           paths:
             - ~/keep
+            - ~/.gradle
           key: v1-keep
