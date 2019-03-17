@@ -13,7 +13,7 @@ jobs:
       - restore_cache:
           keys:
             - v1-keep
-      - run: ./gradlew fetchVersionsFromUpdateCenter
+      - run: ./gradlew -is fetchVersionsFromUpdateCenter
       - run:
           name: Check if current versions are different than last run
           command: |
@@ -21,6 +21,8 @@ jobs:
             if [ -f $PREVIOUS_FILE ]; then
               diff $PREVIOUS_FILE $CURRENT_FILE
             fi
+      - store_artifacts:
+          path: $CURRENT_FILE
       - save_cache:
           paths:
             - ~/keep
