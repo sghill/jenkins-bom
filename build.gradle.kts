@@ -59,8 +59,8 @@ bintray {
     setPublications("jenkinsBom")
     filesSpec(delegateClosureOf<RecordingCopyTask> {
         from("${project.buildDir}/publications/jenkinsBom") {
-            include("pom-default.xml.asc")
-            rename("pom-default.xml.asc", "${project.name}-${project.version}.pom.asc")
+            include("*.xml.asc")
+            rename { "${project.name}-${project.version}.pom.asc" }
         }
         into("com/github/sghill/jenkins/${project.name}/${project.version}")
     })
