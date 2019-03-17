@@ -22,7 +22,7 @@ jobs:
               diff $PREVIOUS_FILE $CURRENT_FILE
             fi
       - store_artifacts:
-          path: $CURRENT_FILE
+          path: /home/circleci/repo/build/update-center/versions.txt
       - save_cache:
           paths:
             - ~/keep
