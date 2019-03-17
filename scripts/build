@@ -37,7 +37,7 @@ function finish {
 }
 trap finish EXIT
 
-echo $SIGNING_FILE | base64 -D > $keyfile
+echo $SIGNING_FILE | base64 --decode > $keyfile
 
 ./gradlew publish \
     -Pversion="`curl -sL https://updates.jenkins-ci.org/stable/latestCore.txt`-$CIRCLE_BUILD_NUM" \
