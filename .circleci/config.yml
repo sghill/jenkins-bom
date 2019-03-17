@@ -36,3 +36,15 @@ jobs:
           name: rotate the versions file
           command: mv -f $CURRENT_FILE $PREVIOUS_FILE
           when: always
+workflows:
+  version: 2
+  nightly:
+    triggers:
+      - schedule:
+          cron: "0 0 * * *"
+          filters:
+            branches:
+              only:
+                - master
+    jobs:
+      - build
