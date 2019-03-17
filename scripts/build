@@ -31,11 +31,19 @@ if [ -f ~/keep/previous.txt ]; then
     set -e
 fi
 
+keyfile=$(mktemp /tmp/ourkey.XXXXXX)
+function finish {
+  rm -f "$keyfile"
+}
+trap finish EXIT
+
+echo $SIGNING_FILE | base64 -D > $keyfile
+
 ./gradlew publish \
     -Pversion="`curl -sL https://updates.jenkins-ci.org/stable/latestCore.txt`-$CIRCLE_BUILD_NUM" \
     -Pbintray.user=$PUBLISH_USER \
     -Pbintray.apiKey=$PUBLISH_KEY \
     -Psigning.keyId=$SIGNING_KEY \
-    -Psigning.password=$SIGNING_PASSWORD \
-    -Psigning.secretKeyRingFile=$SIGNING_FILE \
+    -Psigning.password="$SIGNING_PASSWORD" \
+    -Psigning.secretKeyRingFile=$keyfile \
     --stacktrace

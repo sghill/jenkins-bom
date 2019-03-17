@@ -1,4 +1,5 @@
 import com.jfrog.bintray.gradle.BintrayExtension
+import com.jfrog.bintray.gradle.tasks.RecordingCopyTask
 import internal.AddConstraintsTask
 import internal.FetchVersionsFromUpdateCenterTask
 
@@ -56,6 +57,13 @@ bintray {
     user = prop("bintray.user")
     key = prop("bintray.apiKey")
     setPublications("jenkinsBom")
+    filesSpec(delegateClosureOf<RecordingCopyTask> {
+        from("${project.buildDir}/publications/jenkinsBom") {
+            include("pom-default.xml.asc")
+            rename("pom-default.xml.asc", "${project.name}-${project.version}.pom.asc")
+        }
+        into("com/github/sghill/jenkins/${project.name}/${project.version}")
+    })
     pkg(delegateClosureOf<BintrayExtension.PackageConfig> {
         repo = "maven"
         name = "jenkins-bom"
