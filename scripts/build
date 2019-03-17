@@ -18,7 +18,7 @@ fi
 
 ./gradlew fetchVersionsFromUpdateCenter
 
-if [ -f ~/keep/previous.txt ]; then
+if [ -f $PREVIOUS_FILE ]; then
     echo "We have a previous versions.txt - executing a comparison"
 
     set +e
@@ -27,6 +27,11 @@ if [ -f ~/keep/previous.txt ]; then
     if [ $DIFF_RESULT -eq 0 ]; then
         echo "versions are the same - stopping here"
         exit 0
+    else
+        echo "there are differences"
+        cat $PREVIOUS_FILE
+        echo "---"
+        cat $CURRENT_FILE
     fi
     set -e
 fi
@@ -48,4 +53,3 @@ echo $SIGNING_FILE | base64 --decode > $keyfile
     -Psigning.secretKeyRingFile=$keyfile \
     --stacktrace
 
-ls -la build/publications/jenkinsBom
