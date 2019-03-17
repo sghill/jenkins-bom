@@ -6,8 +6,8 @@ jobs:
     working_directory: ~/repo
     environment:
       TERM: dumb
-      PREVIOUS_FILE: ~/keep/previous.txt
-      CURRENT_FILE: ~/repo/build/update-center/versions.txt
+      PREVIOUS_FILE: /home/circleci/keep/previous.txt
+      CURRENT_FILE: /home/circleci/repo/build/update-center/versions.txt
     steps:
       - checkout
       - restore_cache:
