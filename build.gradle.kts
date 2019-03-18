@@ -14,7 +14,10 @@ group = "com.github.sghill.jenkins"
 
 val upload = tasks.named("bintrayUpload")
 upload.configure {
-    onlyIf { previousSha != currentSha }
+    onlyIf {
+        previous.resolvedConfiguration // force resolution of the previous config
+        previousSha != currentSha
+    }
 }
 tasks.named("publish").configure { dependsOn(upload) }
 
@@ -46,11 +49,18 @@ repositories {
             artifact()
         }
     }
+    jcenter {
+        content {
+            includeModule(group.toString(), name)
+        }
+    }
 }
 
 dependencies {
     jenkins(":update-center:stable@json")
-    previous("$group:$name:latest.release")
+    previous("$group:$name:latest.release") {
+        isChanging = true
+    }
     constraints {
         UpdateCenterParser.parse(jenkins.singleFile).data.forEach {
             dependencies.constraints.add("runtime", it)
@@ -78,10 +88,12 @@ publishing {
             }
         }
     }
-    repositories {
-        maven {
-            name = "Embedded"
-            url = uri("$buildDir/embedded-mvn-repo")
+    if (prop("publishEmbedded") == "true") {
+        repositories {
+            maven {
+                name = "Embedded"
+                url = uri("$buildDir/embedded-mvn-repo")
+            }
         }
     }
 }
@@ -93,20 +105,23 @@ signing {
 
 fun prop(s: String): String? = findProperty(s) as String?
 
-bintray {
-    user = prop("bintray.user")
-    key = prop("bintray.apiKey")
-    setPublications("jenkinsBom")
-    filesSpec(delegateClosureOf<RecordingCopyTask> {
-        from("${project.buildDir}/publications/jenkinsBom") {
-            include("pom-default.xml.asc")
-            rename { "${project.name}-${project.version}.pom.asc" }
-        }
-        into("com/github/sghill/jenkins/${project.name}/${project.version}")
-    })
-    pkg(delegateClosureOf<BintrayExtension.PackageConfig> {
-        repo = "maven"
-        name = "jenkins-bom"
-        setLicenses("MIT")
-    })
+project.afterEvaluate {
+    bintray {
+        user = prop("bintray.user")
+        key = prop("bintray.apiKey")
+        setPublications("jenkinsBom")
+        filesSpec(delegateClosureOf<RecordingCopyTask> {
+            from("${project.buildDir}/publications/jenkinsBom") {
+                include("pom-default.xml.asc")
+                rename { "${project.name}-${project.version}.pom.asc" }
+            }
+            into("com/github/sghill/jenkins/${project.name}/${project.version}")
+        })
+        pkg(delegateClosureOf<BintrayExtension.PackageConfig> {
+            repo = "maven"
+            name = "jenkins-bom"
+            publish = true
+            setLicenses("MIT")
+        })
+    }
 }
