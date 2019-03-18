@@ -21,6 +21,9 @@ jobs:
           key: v1-keep-{{ checksum "build.gradle.kts" }}
 workflows:
   version: 2
+  commit:
+    jobs:
+      - build
   nightly:
     triggers:
       - schedule:
