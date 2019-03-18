@@ -11,13 +11,7 @@ object UpdateCenterParser {
     fun parse(file: File): Recommendations {
         val moshi = Moshi.Builder().add(KotlinJsonAdapterFactory()).build()
         val updateCenter: UpdateCenter = moshi.adapter(UpdateCenter::class.java).fromJson(file.readText())!!
-        val additionalRecommendations = listOf(
-                "org.jenkins-ci.main:jenkins-war:${updateCenter.core.version}"
-        )
-
-        val values = updateCenter.plugins.values + additionalRecommendations.map { JenkinsPlugin(it) }
-        val recs = values.stream()
-                .map { p -> p.gav }
+        val recs = updateCenter.plugins.values.stream()
                 .sorted()
                 .distinct()
                 .toList()

@@ -1,25 +1,28 @@
-import com.jfrog.bintray.gradle.BintrayExtension
-import com.jfrog.bintray.gradle.tasks.RecordingCopyTask
+import alt.AltBintrayAbstractTask
+import alt.AltBintrayExtension
 import internal.UpdateCenterParser
 import internal.VersionShaParser
+import java.time.Instant
+import java.time.format.DateTimeFormatter
 
 plugins {
     `java-platform`
     `maven-publish`
     signing
-    id("com.jfrog.bintray") version "1.8.4"
+    id("alt.bintray")
 }
 
 group = "com.github.sghill.jenkins"
 
-val upload = tasks.named("bintrayUpload")
-upload.configure {
+// disable publishing if nothing is different
+tasks.withType(AltBintrayAbstractTask::class.java).configureEach {
     onlyIf {
         previous.resolvedConfiguration // force resolution of the previous config
+        logger.warn("Recommendations comparison: (previous) {} vs {} (current)", previousSha, currentSha)
         previousSha != currentSha
     }
 }
-tasks.named("publish").configure { dependsOn(upload) }
+
 
 val jenkins: Configuration by configurations.creating
 val previous: Configuration by configurations.creating
@@ -27,8 +30,8 @@ var previousSha by extra<String>("")
 var currentSha by extra<String>("")
 
 previous.incoming.afterResolve {
-    previousSha = VersionShaParser.parse(resolutionResult.allComponents.single().moduleVersion!!.version)
-    println("Recognized previous recommendations sha as $previousSha")
+    val resolved = resolutionResult.allComponents.single { it.id is ModuleComponentIdentifier }
+    previousSha = VersionShaParser.parse(resolved.moduleVersion!!.version)
 }
 
 jenkins.incoming.afterResolve {
@@ -36,7 +39,6 @@ jenkins.incoming.afterResolve {
     val v = recommendations.toVersion()
     currentSha = recommendations.shortSha256
     project.version = v
-    println("Recognized current recommendations sha as $currentSha")
 }
 
 repositories {
@@ -51,19 +53,28 @@ repositories {
     }
     jcenter {
         content {
-            includeModule(group.toString(), name)
+            includeModule("com.github.sghill.jenkins", "jenkins-bom")
         }
     }
 }
 
+val jenkinsPluginExtension = Attribute.of("io.jenkins.plugin.extension", String::class.java)
+
 dependencies {
     jenkins(":update-center:stable@json")
-    previous("$group:$name:latest.release") {
-        isChanging = true
-    }
+    previous("$group:$name:latest.release")
     constraints {
-        UpdateCenterParser.parse(jenkins.singleFile).data.forEach {
-            dependencies.constraints.add("runtime", it)
+        val updateCenter = UpdateCenterParser.parse(jenkins.singleFile)
+        val rationale = "Recommended at ${DateTimeFormatter.ISO_INSTANT.format(Instant.now())} by Jenkins Update Center for v${updateCenter.jenkinsVersion}"
+        runtime("org.jenkins-ci.main:jenkins-war:${updateCenter.jenkinsVersion}") {
+            because(rationale)
+        }
+        updateCenter.data.forEach {
+            dependencies.constraints.add("runtime", it.gav) {
+                attributes {
+                    attribute(jenkinsPluginExtension, it.extension())
+                }
+            }
         }
     }
 }
@@ -88,8 +99,8 @@ publishing {
             }
         }
     }
-    if (prop("publishEmbedded") == "true") {
-        repositories {
+    repositories {
+        if (prop("publishEmbedded") == "true") {
             maven {
                 name = "Embedded"
                 url = uri("$buildDir/embedded-mvn-repo")
@@ -105,23 +116,8 @@ signing {
 
 fun prop(s: String): String? = findProperty(s) as String?
 
-project.afterEvaluate {
-    bintray {
-        user = prop("bintray.user")
-        key = prop("bintray.apiKey")
-        setPublications("jenkinsBom")
-        filesSpec(delegateClosureOf<RecordingCopyTask> {
-            from("${project.buildDir}/publications/jenkinsBom") {
-                include("pom-default.xml.asc")
-                rename { "${project.name}-${project.version}.pom.asc" }
-            }
-            into("com/github/sghill/jenkins/${project.name}/${project.version}")
-        })
-        pkg(delegateClosureOf<BintrayExtension.PackageConfig> {
-            repo = "maven"
-            name = "jenkins-bom"
-            publish = true
-            setLicenses("MIT")
-        })
-    }
+configure<AltBintrayExtension> {
+    repo.set("maven")
+    pkgName.set("jenkins-bom")
+    autoPublish.set(true)
 }
