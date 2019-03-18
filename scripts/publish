@@ -9,8 +9,8 @@ trap finish EXIT
 
 echo $SIGNING_FILE | base64 --decode > $keyfile
 
-./gradlew publish \
-    -Pversion="`curl -sL https://updates.jenkins-ci.org/stable/latestCore.txt`-$CIRCLE_BUILD_NUM" \
+./gradlew clean publish \
+    --refresh-dependencies \
     -Pbintray.user=$PUBLISH_USER \
     -Pbintray.apiKey=$PUBLISH_KEY \
     -Psigning.keyId=$SIGNING_KEY \

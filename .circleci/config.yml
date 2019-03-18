@@ -12,30 +12,13 @@ jobs:
       - checkout
       - restore_cache:
           keys:
+            - v1-keep-{{ checksum "build.gradle.kts" }}
             - v1-keep
-      - run: ./gradlew -is fetchVersionsFromUpdateCenter
-      - run:
-          name: Check if current versions are different than last run
-          command: |
-            mkdir -p ~/keep
-            if [ -f $PREVIOUS_FILE ]; then
-              diff $PREVIOUS_FILE $CURRENT_FILE
-            fi
-      - store_artifacts:
-          path: /home/circleci/repo/build/update-center/versions.txt
+      - run: ./scripts/publish
       - save_cache:
           paths:
-            - ~/keep
             - ~/.gradle
-          key: v1-keep
-          when: always
-      - run:
-          command: ./scripts/publish
-          when: on_fail # only publish when the diff shows something different
-      - run:
-          name: rotate the versions file
-          command: mv -f $CURRENT_FILE $PREVIOUS_FILE
-          when: always
+          key: v1-keep-{{ checksum "build.gradle.kts" }}
 workflows:
   version: 2
   nightly:

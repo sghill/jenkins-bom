@@ -1,7 +1,7 @@
 import com.jfrog.bintray.gradle.BintrayExtension
 import com.jfrog.bintray.gradle.tasks.RecordingCopyTask
-import internal.AddConstraintsTask
-import internal.FetchVersionsFromUpdateCenterTask
+import internal.UpdateCenterParser
+import internal.VersionShaParser
 
 plugins {
     `java-platform`
@@ -12,11 +12,51 @@ plugins {
 
 group = "com.github.sghill.jenkins"
 
-val addConstraints = tasks.register("addConstraints", AddConstraintsTask::class)
-val fetch = tasks.register("fetchVersionsFromUpdateCenter", FetchVersionsFromUpdateCenterTask::class)
 val upload = tasks.named("bintrayUpload")
-upload.configure { dependsOn(addConstraints) }
-tasks.named("publish").configure { dependsOn(upload, addConstraints) }
+upload.configure {
+    onlyIf { previousSha != currentSha }
+}
+tasks.named("publish").configure { dependsOn(upload) }
+
+val jenkins: Configuration by configurations.creating
+val previous: Configuration by configurations.creating
+var previousSha by extra<String>("")
+var currentSha by extra<String>("")
+
+previous.incoming.afterResolve {
+    previousSha = VersionShaParser.parse(resolutionResult.allComponents.single().moduleVersion!!.version)
+    println("Recognized previous recommendations sha as $previousSha")
+}
+
+jenkins.incoming.afterResolve {
+    val recommendations = UpdateCenterParser.parse(jenkins.singleFile)
+    val v = recommendations.toVersion()
+    currentSha = recommendations.shortSha256
+    project.version = v
+    println("Recognized current recommendations sha as $currentSha")
+}
+
+repositories {
+    ivy {
+        url = uri("https://updates.jenkins-ci.org")
+        patternLayout {
+            artifact("[revision]/[module].actual.[ext]")
+        }
+        metadataSources {
+            artifact()
+        }
+    }
+}
+
+dependencies {
+    jenkins(":update-center:stable@json")
+    previous("$group:$name:latest.release")
+    constraints {
+        UpdateCenterParser.parse(jenkins.singleFile).data.forEach {
+            dependencies.constraints.add("runtime", it)
+        }
+    }
+}
 
 publishing {
     publications {
@@ -59,7 +99,7 @@ bintray {
     setPublications("jenkinsBom")
     filesSpec(delegateClosureOf<RecordingCopyTask> {
         from("${project.buildDir}/publications/jenkinsBom") {
-            include("*.xml.asc")
+            include("pom-default.xml.asc")
             rename { "${project.name}-${project.version}.pom.asc" }
         }
         into("com/github/sghill/jenkins/${project.name}/${project.version}")
