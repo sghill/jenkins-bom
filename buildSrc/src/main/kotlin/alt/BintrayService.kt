@@ -21,7 +21,8 @@ interface BintrayService {
             @Body createVersionRequest: CreateVersionRequest
     ): Call<Void>
 
-    @POST("/content/{subject}/{repo}/{pkg}/versions/{version}/publish")
+    @Headers("Content-Type: application/json")
+    @POST("/content/{subject}/{repo}/{pkg}/{version}/publish")
     fun publishVersion(
             @Path("subject") subject: String,
             @Path("repo") repo: String,
