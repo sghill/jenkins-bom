@@ -40,7 +40,12 @@ open class AltBintrayPublishTask : AltBintrayAbstractTask() {
         if (errors.isNotEmpty()) {
             throw GradleException("Missing required configuration for alternative bintray task: $errors")
         }
-        bintray().publishVersion(resolvedSubject, resolvedRepoName, resolvedPkgName, resolvedVersion)
+        val result = bintray().publishVersion(resolvedSubject, resolvedRepoName, resolvedPkgName, resolvedVersion).execute()
+        if (result.isSuccessful) {
+            logger.info("$resolvedPkgName version $resolvedVersion has been published")
+        } else {
+            throw GradleException("Received ${result.code()} attempting to publish $resolvedPkgName version $resolvedVersion")
+        }
     }
 
     private fun String.isNotSet() = this == UNSET
