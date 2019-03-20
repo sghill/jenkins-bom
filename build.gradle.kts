@@ -22,7 +22,13 @@ tasks.withType(AltBintrayAbstractTask::class.java).configureEach {
         previousSha != currentSha
     }
 }
-
+tasks.withType(PublishToMavenRepository::class.java).configureEach {
+    onlyIf {
+        previous.resolvedConfiguration // force resolution of the previous config
+        logger.warn("Recommendations comparison: (previous) {} vs {} (current)", previousSha, currentSha)
+        previousSha != currentSha
+    }
+}
 
 val jenkins: Configuration by configurations.creating
 val previous: Configuration by configurations.creating
