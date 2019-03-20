@@ -25,6 +25,7 @@ open class AltBintrayPlugin : Plugin<Project> {
             repo.set(altBintray.repo)
             userOrg.set(altBintray.userOrg)
             version.set(project.version as String)
+            autoPublishWaitForSeconds.set(altBintray.autoPublishWaitForSeconds)
             onlyIf { altBintray.autoPublish.getOrElse(false) }
         }
 

@@ -18,6 +18,9 @@ open class AltBintrayPublishTask : AltBintrayAbstractTask() {
     @Input
     @Optional
     val version: Property<String> = project.objects.property()
+    @Input
+    @Optional
+    val autoPublishWaitForSeconds: Property<Int> = project.objects.property()
 
     private companion object {
         const val UNSET = "UNSET"
@@ -40,7 +43,8 @@ open class AltBintrayPublishTask : AltBintrayAbstractTask() {
         if (errors.isNotEmpty()) {
             throw GradleException("Missing required configuration for alternative bintray task: $errors")
         }
-        val result = bintray().publishVersion(resolvedSubject, resolvedRepoName, resolvedPkgName, resolvedVersion).execute()
+        val resolvedWait = autoPublishWaitForSeconds.getOrElse(0)
+        val result = bintray().publishVersion(resolvedSubject, resolvedRepoName, resolvedPkgName, resolvedVersion, PublishRequest(resolvedWait)).execute()
         if (result.isSuccessful) {
             logger.info("$resolvedPkgName version $resolvedVersion has been published")
         } else {

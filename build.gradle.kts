@@ -126,4 +126,5 @@ configure<AltBintrayExtension> {
     repo.set("maven")
     pkgName.set("jenkins-bom")
     autoPublish.set(true)
+    autoPublishWaitForSeconds.set(60)
 }

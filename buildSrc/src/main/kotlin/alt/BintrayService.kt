@@ -21,11 +21,12 @@ interface BintrayService {
             @Body createVersionRequest: CreateVersionRequest
     ): Call<Void>
 
-    @POST("/packages/{subject}/{repo}/{pkg}/versions/{version}/publish")
+    @POST("/content/{subject}/{repo}/{pkg}/versions/{version}/publish")
     fun publishVersion(
             @Path("subject") subject: String,
             @Path("repo") repo: String,
             @Path("pkg") pkg: String,
-            @Path("version") version: String
+            @Path("version") version: String,
+            @Body body: PublishRequest
     ): Call<Void>
 }

@@ -10,6 +10,7 @@ open class AltBintrayExtension(objects: ObjectFactory) {
     val repo: Property<String> = objects.property()
     val userOrg: Property<String> = objects.property()
     val autoPublish: Property<Boolean> = objects.property()
+    val autoPublishWaitForSeconds: Property<Int> = objects.property()
 
     fun hasSubject(p: Project): Boolean = userOrg.isPresent || p.hasProperty("bintray.user")
 
