@@ -36,8 +36,12 @@ var previousSha by extra<String>("")
 var currentSha by extra<String>("")
 
 previous.incoming.afterResolve {
-    val resolved = resolutionResult.allComponents.single { it.id is ModuleComponentIdentifier }
-    previousSha = VersionShaParser.parse(resolved.moduleVersion!!.version)
+    val resolved = resolutionResult.allComponents.filter { it.id is ModuleComponentIdentifier }
+    if (resolved.count() != 1) {
+        logger.warn("Found these components: {}", resolved)
+        throw GradleException("Expected 1 component to be resolved, but found ${resolved.count()}")
+    }
+    previousSha = VersionShaParser.parse(resolved.single().moduleVersion!!.version)
 }
 
 jenkins.incoming.afterResolve {
