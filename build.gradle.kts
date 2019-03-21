@@ -77,6 +77,7 @@ dependencies {
         }
         updateCenter.data.forEach {
             dependencies.constraints.add("runtime", it.gav) {
+                because(rationale)
                 attributes {
                     attribute(jenkinsPluginExtension, it.extension())
                 }
