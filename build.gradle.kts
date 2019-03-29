@@ -76,7 +76,7 @@ dependencies {
     constraints {
         val updateCenter = UpdateCenterParser.parse(jenkins.singleFile)
         val rationale = "Recommended at ${DateTimeFormatter.ISO_INSTANT.format(Instant.now())} by Jenkins Update Center for v${updateCenter.jenkinsVersion}"
-        runtime("org.jenkins-ci.main:jenkins-war:${updateCenter.jenkinsVersion}") {
+        api("org.jenkins-ci.main:jenkins-war:${updateCenter.jenkinsVersion}") {
             because(rationale)
         }
         updateCenter.data.forEach {
