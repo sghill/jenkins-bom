@@ -80,7 +80,7 @@ dependencies {
             because(rationale)
         }
         updateCenter.data.forEach {
-            dependencies.constraints.add("runtime", it.gav) {
+            dependencies.constraints.add("api", it.gav) {
                 because(rationale)
                 attributes {
                     attribute(jenkinsPluginExtension, it.extension())
