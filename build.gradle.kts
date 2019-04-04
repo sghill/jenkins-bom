@@ -79,6 +79,9 @@ dependencies {
         api("org.jenkins-ci.main:jenkins-war:${updateCenter.jenkinsVersion}") {
             because(rationale)
         }
+        api("org.jenkins-ci.main:jenkins-core:${updateCenter.jenkinsVersion}") {
+            because(rationale)
+        }
         updateCenter.data.forEach {
             dependencies.constraints.add("api", it.gav) {
                 because(rationale)
