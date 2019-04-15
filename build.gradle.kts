@@ -71,8 +71,12 @@ repositories {
 val jenkinsPluginExtension = Attribute.of("io.jenkins.plugin.extension", String::class.java)
 
 dependencies {
-    jenkins(":update-center:stable@json")
-    previous("$group:$name:latest.release")
+    jenkins(":update-center:stable@json") {
+        setChanging(true)
+    }
+    previous("$group:$name:latest.release") {
+        setChanging(true)
+    }
     constraints {
         val updateCenter = UpdateCenterParser.parse(jenkins.singleFile)
         val rationale = "Recommended at ${DateTimeFormatter.ISO_INSTANT.format(Instant.now())} by Jenkins Update Center for v${updateCenter.jenkinsVersion}"
