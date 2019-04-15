@@ -1,7 +1,5 @@
-import alt.AltBintrayAbstractTask
 import alt.AltBintrayExtension
 import internal.UpdateCenterParser
-import internal.VersionShaParser
 import java.time.Instant
 import java.time.format.DateTimeFormatter
 
@@ -14,26 +12,8 @@ plugins {
 
 group = "com.github.sghill.jenkins"
 
-// disable publishing if nothing is different
-tasks.withType(AltBintrayAbstractTask::class.java).configureEach {
-    onlyIf {
-        previous.resolvedConfiguration // force resolution of the previous config
-        logger.warn("Recommendations comparison: (previous) {} vs {} (current)", previousSha, currentSha)
-        previousSha != currentSha
-    }
-}
-tasks.withType(PublishToMavenRepository::class.java).configureEach {
-    onlyIf {
-        previous.resolvedConfiguration // force resolution of the previous config
-        logger.warn("Recommendations comparison: (previous) {} vs {} (current)", previousSha, currentSha)
-        previousSha != currentSha
-    }
-}
-
 val jenkins: Configuration by configurations.creating
 val previous: Configuration by configurations.creating
-var previousSha by extra<String>("")
-var currentSha by extra<String>("")
 
 previous.incoming.afterResolve {
     val resolved = resolutionResult.allComponents.filter { it.id is ModuleComponentIdentifier }
@@ -41,13 +21,11 @@ previous.incoming.afterResolve {
         logger.warn("Found these components: {}", resolved)
         throw GradleException("Expected 1 component to be resolved, but found ${resolved.count()}")
     }
-    previousSha = VersionShaParser.parse(resolved.single().moduleVersion!!.version)
 }
 
 jenkins.incoming.afterResolve {
     val recommendations = UpdateCenterParser.parse(jenkins.singleFile)
     val v = recommendations.toVersion()
-    currentSha = recommendations.shortSha256
     project.version = v
 }
 
